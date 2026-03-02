@@ -1,20 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import {
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  Divider,
-  Button,
-} from "@heroui/react";
-import { useDB } from "@/hooks/useDB";
-import { useAuth } from "@/hooks/useAuth";
+import { Card, Button } from "@heroui/react";
+import { useDB, useAuth } from "@/hooks";
 import type { GSAPSession } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 export default function Sessions() {
   const [sessions, setSessions] = useState<GSAPSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const dbService = useDB();
   const { isAdmin } = useAuth();
 
@@ -48,7 +41,7 @@ export default function Sessions() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">GSAP Learning Sessions</h1>
         {isAdmin && (
-          <Button as={Link} to="/session/new" color="primary">
+          <Button onClick={() => navigate("/session/new")} variant="primary">
             Create New Session
           </Button>
         )}
@@ -60,16 +53,15 @@ export default function Sessions() {
         ) : (
           visibleSessions.map((session) => (
             <Card key={session.id} className="max-w-[400px]">
-              <CardHeader className="flex gap-3">
+              <Card.Header className="flex gap-3">
                 <div className="flex flex-col">
                   <p className="text-md font-bold">{session.title}</p>
                   <p className="text-small text-default-500">
                     {new Date(session.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-              </CardHeader>
-              <Divider />
-              <CardBody>
+              </Card.Header>
+              <Card.Content>
                 <p className="text-sm text-default-700">
                   {session.description}
                 </p>
@@ -78,19 +70,16 @@ export default function Sessions() {
                     Private Draft
                   </span>
                 )}
-              </CardBody>
-              <Divider />
-              <CardFooter>
+              </Card.Content>
+              <Card.Footer>
                 <Button
-                  as={Link}
-                  to={`/session/${session.id}`}
-                  variant="flat"
-                  color="primary"
+                  onClick={() => navigate(`/session/${session.id}`)}
+                  variant="outline"
                   className="w-full"
                 >
                   {isAdmin ? "Edit Session" : "View Code & Preview"}
                 </Button>
-              </CardFooter>
+              </Card.Footer>
             </Card>
           ))
         )}

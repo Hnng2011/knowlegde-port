@@ -7,7 +7,7 @@ import Login from "./pages/Login";
 
 function App() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto p-4">
         <Routes>

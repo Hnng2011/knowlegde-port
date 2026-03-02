@@ -8,7 +8,7 @@ import {
   SandpackFileExplorer,
   useSandpack,
 } from "@codesandbox/sandpack-react";
-import { Button, Input, Switch } from "@heroui/react";
+import { Button, Input, Spinner, Switch } from "@heroui/react";
 import { useDB, useAuth } from "@/hooks";
 import type { GSAPSession, CreateSessionInput } from "@/types";
 
@@ -49,28 +49,36 @@ function AdminSaveControls({
   return (
     <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-default-100 rounded-lg">
       <Input
-        size="sm"
         value={title}
-        onValueChange={setTitle}
+        onChange={setTitle as any}
         placeholder="Session Title"
         className="w-64"
       />
       <Input
-        size="sm"
         value={description}
-        onValueChange={setDescription}
+        onChange={setDescription as any}
         placeholder="Description"
         className="flex-1"
       />
-      <Switch isSelected={isPublic} onValueChange={setIsPublic} size="sm">
+      <Switch isSelected={isPublic} onChange={setIsPublic} size="sm">
         Public
       </Switch>
       <Button
         onClick={() => void handleSave()}
-        isLoading={saving}
-        color={session ? "warning" : "success"}
+        isPending={saving}
+        variant={session ? "danger" : "primary"}
       >
-        {session ? "Update Changes" : "Save New Sandbox"}
+        {({ isPending }) => (
+          <>
+            {isPending ? (
+              <Spinner color="current" size="sm" />
+            ) : session ? (
+              "Update Changes"
+            ) : (
+              "Save New Sandbox"
+            )}
+          </>
+        )}
       </Button>
     </div>
   );

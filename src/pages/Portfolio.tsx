@@ -5,7 +5,7 @@ export default function Portfolio() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] text-center max-w-3xl mx-auto py-12 px-4 gap-8">
       <div className="flex flex-col gap-4 relative">
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-red-500 to-secondary bg-clip-text text-transparent">
           GSAP Learning Journal
         </h1>
         <p className="text-xl md:text-2xl text-default-600 font-medium">
@@ -30,23 +30,14 @@ export default function Portfolio() {
 
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <Button
-          as={Link}
-          to="/sessions"
-          color="primary"
+          variant="primary"
           size="lg"
           className="font-bold px-8 shadow-md"
         >
-          Explore Sessions
+          <Link to="/sessions">Explore Sessions</Link>
         </Button>
-        <Button
-          as={Link}
-          to="/login"
-          variant="flat"
-          color="default"
-          size="lg"
-          className="font-medium px-8"
-        >
-          Admin Login
+        <Button variant="secondary" size="lg" className="font-medium px-8">
+          <Link to="/login">Admin Login</Link>
         </Button>
       </div>
     </div>

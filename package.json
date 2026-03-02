@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
-    "@heroui/react": "^2.8.9",
+    "@heroui/react": "^3.0.0-beta.7",
+    "@heroui/styles": "^3.0.0-beta.7",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.576.0",
