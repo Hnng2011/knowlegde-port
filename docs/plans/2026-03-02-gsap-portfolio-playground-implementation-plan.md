@@ -1,12 +1,20 @@
 # GSAP Portfolio & Playground Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use @[.agent/skills/executing-plans/SKILL.md] to implement this plan task-by-task.
+> **MUST:** REQUIRED SUB-SKILL: Use @[.agent/skills/executing-plans/SKILL.md] to implement this plan task-by-task.
+>
+> **GLOBAL REQUIREMENTS FOR SUBCONSCIOUS/AGENT:**
+> You **MUST** strictly adhere to the following 4 skills during implementation:
+>
+> 1. **React Architecture & Hooks:** Must follow `@[.agent/skills/vercel-react-best-practices/SKILL.md]`. Do NOT use class-based OOP for services. Use hooks, contexts, and pure functions.
+> 2. **Types & Schema:** Must follow `@[.agent/skills/typescript-advanced-types/SKILL.md]`. Strongly type all responses, use JSDoc, branded types for IDs, utility types (Omit/Partial) to prevent untyped `any` or loose types.
+> 3. **Styling & CSS:** Must follow `@[.agent/skills/tailwind-design-system/SKILL.md]`. Ensure you use Tailwind CSS v4 patterns (`@import "tailwindcss"`, CSS-first configuration via `@theme`, avoid `tailwind.config.ts`, use `twMerge` + `clsx` via `cn()` utility).
+> 4. **Frontend Design & UX Mastery:** Must strictly follow `@[.agent/skills/anthropic-frontend-design/SKILL.md]` for clean and modern UI theme.
 
 **Goal:** Build a React/Vite-based portfolio and interactive GSAP learning journal with role-based Sandpack code editing.
 
 **Architecture:** Client-side rendered React application with dependency-injected Authentication and Database services for local-first storage, designed to be extensible to Supabase in the future. Features a dual-pane CodeSandbox-powered code editor (Sandpack) for React+GSAP.
 
-**Tech Stack:** React 19, Vite, TypeScript, Tailwind CSS, Hero UI, `@codesandbox/sandpack-react`, React Router, Zustand (or Context).
+**Tech Stack:** React 19, Vite, TypeScript, Tailwind CSS v4, Hero UI, `@codesandbox/sandpack-react`, React Router, Zustand (or Context).
 
 ---
 
@@ -16,7 +24,7 @@
 
 **Files:**
 
-- Create: `package.json`, `tailwind.config.ts`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`
+- Create: `package.json`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`
 - Create: `src/index.css`
 
 **Step 1: Install & Scaffold Project**
@@ -27,39 +35,29 @@ Run:
 npm create vite@latest . -- --template react-ts -y
 npm install
 npm install react-router-dom @codesandbox/sandpack-react clsx tailwind-merge framer-motion lucide-react
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
+npm install tailwindcss @tailwindcss/vite
 npm install @heroui/react
 ```
 
-**Step 2: Configure Tailwind & Hero UI**
+**Step 2: Configure Tailwind v4 & Hero UI**
 
-Modify `tailwind.config.js` (or `.ts`):
+Modify `vite.config.ts` to include the tailwind plugin:
 
 ```typescript
-import { heroui } from "@heroui/react";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {},
-  },
-  darkMode: "class",
-  plugins: [heroui()],
-};
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+});
 ```
 
-Modify `src/index.css`:
+Modify `src/index.css` to import Tailwind v4 and include HeroUI sources:
 
 ```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 ```
 
 Modify `src/main.tsx` to wrap App with Providers:
@@ -97,17 +95,26 @@ git commit -m "chore: initial project setup with tailwind, hero ui, and sandpack
 
 ---
 
-### Task 2: Service Abstraction (Auth & Database)
+### Task 2: Service Abstraction (Auth & Database) — Hooks + Context Pattern
 
-**Goal:** Create interfaces and mock local implementations for Auth and DB.
+> **IMPORTANT:** Follow `@[.agent/skills/vercel-react-best-practices/SKILL.md]` when writing all React code.
+> **DO NOT use class-based services.** Use React Context + Provider + Custom Hooks pattern instead.
+
+**Goal:** Create type definitions, React Context providers, and custom hooks for Auth and DB. Pure functions handle data access logic; React state + context handle reactivity and DI. The provider accepts a "strategy" object so swapping to Supabase later only requires changing the strategy, not any consuming component.
 
 **Files:**
 
 - Create: `src/types/index.ts`
-- Create: `src/services/auth.service.ts`
-- Create: `src/services/db.service.ts`
+- Create: `src/providers/auth/auth.types.ts`
+- Create: `src/providers/auth/local-auth.strategy.ts`
+- Create: `src/providers/auth/AuthProvider.tsx`
+- Create: `src/hooks/useAuth.ts`
+- Create: `src/providers/db/db.types.ts`
+- Create: `src/providers/db/local-db.strategy.ts`
+- Create: `src/providers/db/DBProvider.tsx`
+- Create: `src/hooks/useDB.ts`
 
-**Step 1: Define Types**
+**Step 1: Define shared types**
 
 Create `src/types/index.ts`:
 
@@ -128,114 +135,282 @@ export interface User {
 }
 ```
 
-**Step 2: Implement Auth Service**
+**Step 2: Define Auth strategy interface & local implementation**
 
-Create `src/services/auth.service.ts`:
+Create `src/providers/auth/auth.types.ts`:
 
 ```typescript
-import { User } from "../types";
+import type { User } from "../../types";
 
-class LocalAuthService {
-  private currentUser: User | null = null;
-
-  constructor() {
-    const saved = localStorage.getItem("gsap_user");
-    if (saved) {
-      this.currentUser = JSON.parse(saved);
-    }
-  }
-
-  async login(username: string, pass: string): Promise<User> {
-    // Hardcoded simple check
-    if (username === "admin" && pass === "admin123") {
-      const user = { id: "1", username };
-      this.currentUser = user;
-      localStorage.setItem("gsap_user", JSON.stringify(user));
-      return user;
-    }
-    throw new Error("Invalid credentials");
-  }
-
-  async logout(): Promise<void> {
-    this.currentUser = null;
-    localStorage.removeItem("gsap_user");
-  }
-
-  getCurrentUser(): User | null {
-    return this.currentUser;
-  }
+/** Strategy interface — swap this object to change auth provider */
+export interface AuthStrategy {
+  login: (username: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  getStoredUser: () => User | null;
+  persistUser: (user: User) => void;
+  clearUser: () => void;
 }
 
-export const authService = new LocalAuthService();
+export interface AuthContextValue {
+  user: User | null;
+  isAdmin: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
 ```
 
-**Step 3: Implement Database Service**
-
-Create `src/services/db.service.ts`:
+Create `src/providers/auth/local-auth.strategy.ts`:
 
 ```typescript
-import { GSAPSession } from "../types";
+import type { User } from "../../types";
+import type { AuthStrategy } from "./auth.types";
 
-class LocalDBService {
-  private getStorage(): GSAPSession[] {
-    const data = localStorage.getItem("gsap_sessions");
-    return data ? JSON.parse(data) : [];
-  }
+const STORAGE_KEY = "gsap_user";
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "admin123";
 
-  private saveStorage(sessions: GSAPSession[]) {
-    localStorage.setItem("gsap_sessions", JSON.stringify(sessions));
-  }
+export const localAuthStrategy: AuthStrategy = {
+  login: async (username, password) => {
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      return { id: "1", username };
+    }
+    throw new Error("Invalid credentials");
+  },
 
-  async getSessions(): Promise<GSAPSession[]> {
-    return this.getStorage();
-  }
+  logout: async () => {
+    /* no-op for local, cleanup handled by clearUser */
+  },
 
-  async getSessionById(id: string): Promise<GSAPSession | null> {
-    const sessions = this.getStorage();
-    return sessions.find((s) => s.id === id) || null;
-  }
+  getStoredUser: () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? (JSON.parse(saved) as User) : null;
+  },
 
-  async saveSession(
+  persistUser: (user) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  },
+
+  clearUser: () => {
+    localStorage.removeItem(STORAGE_KEY);
+  },
+};
+```
+
+**Step 3: Create AuthProvider + useAuth hook**
+
+Create `src/providers/auth/AuthProvider.tsx`:
+
+```tsx
+import {
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from "react";
+import type { AuthContextValue, AuthStrategy } from "./auth.types";
+
+export const AuthContext = createContext<AuthContextValue | null>(null);
+
+interface AuthProviderProps {
+  strategy: AuthStrategy;
+  children: ReactNode;
+}
+
+export function AuthProvider({ strategy, children }: AuthProviderProps) {
+  // rerender-lazy-state-init: use function initializer to avoid reading localStorage on every render
+  const [user, setUser] = useState(() => strategy.getStoredUser());
+
+  // rerender-functional-setstate: stable callbacks via useCallback
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const loggedInUser = await strategy.login(username, password);
+      strategy.persistUser(loggedInUser);
+      setUser(loggedInUser);
+    },
+    [strategy],
+  );
+
+  const logout = useCallback(async () => {
+    await strategy.logout();
+    strategy.clearUser();
+    setUser(null);
+  }, [strategy]);
+
+  // rerender-derived-state: derive isAdmin from user, don't store separately
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, isAdmin: user !== null, login, logout }),
+    [user, login, logout],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+```
+
+Create `src/hooks/useAuth.ts`:
+
+```typescript
+import { useContext } from "react";
+import { AuthContext } from "../providers/auth/AuthProvider";
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
+}
+```
+
+**Step 4: Define DB strategy interface & local implementation**
+
+Create `src/providers/db/db.types.ts`:
+
+```typescript
+import type { GSAPSession } from "../../types";
+
+/** Strategy interface — swap this object to change database provider */
+export interface DBStrategy {
+  getSessions: () => Promise<GSAPSession[]>;
+  getSessionById: (id: string) => Promise<GSAPSession | null>;
+  saveSession: (
     session: Omit<GSAPSession, "id" | "createdAt" | "updatedAt">,
-  ): Promise<GSAPSession> {
-    const sessions = this.getStorage();
+  ) => Promise<GSAPSession>;
+  updateSession: (
+    id: string,
+    updates: Partial<GSAPSession>,
+  ) => Promise<GSAPSession>;
+  deleteSession: (id: string) => Promise<void>;
+}
+
+export interface DBContextValue extends DBStrategy {}
+```
+
+Create `src/providers/db/local-db.strategy.ts`:
+
+```typescript
+import type { GSAPSession } from "../../types";
+import type { DBStrategy } from "./db.types";
+
+const STORAGE_KEY = "gsap_sessions";
+
+function readSessions(): GSAPSession[] {
+  const data = localStorage.getItem(STORAGE_KEY);
+  return data ? (JSON.parse(data) as GSAPSession[]) : [];
+}
+
+function writeSessions(sessions: GSAPSession[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+export const localDBStrategy: DBStrategy = {
+  getSessions: async () => readSessions(),
+
+  getSessionById: async (id) => readSessions().find((s) => s.id === id) ?? null,
+
+  saveSession: async (input) => {
+    const sessions = readSessions();
     const newSession: GSAPSession = {
-      ...session,
+      ...input,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     sessions.push(newSession);
-    this.saveStorage(sessions);
+    writeSessions(sessions);
     return newSession;
-  }
+  },
 
-  async updateSession(
-    id: string,
-    updates: Partial<GSAPSession>,
-  ): Promise<GSAPSession> {
-    const sessions = this.getStorage();
-    const index = sessions.findIndex((s) => s.id === id);
-    if (index === -1) throw new Error("Session not found");
-
-    sessions[index] = {
-      ...sessions[index],
+  updateSession: async (id, updates) => {
+    const sessions = readSessions();
+    const idx = sessions.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error("Session not found");
+    sessions[idx] = {
+      ...sessions[idx],
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    this.saveStorage(sessions);
-    return sessions[index];
-  }
-}
+    writeSessions(sessions);
+    return sessions[idx];
+  },
 
-export const dbService = new LocalDBService();
+  deleteSession: async (id) => {
+    const sessions = readSessions().filter((s) => s.id !== id);
+    writeSessions(sessions);
+  },
+};
 ```
 
-**Step 4: Commit**
+**Step 5: Create DBProvider + useDB hook**
+
+Create `src/providers/db/DBProvider.tsx`:
+
+```tsx
+import { createContext, useMemo, type ReactNode } from "react";
+import type { DBContextValue, DBStrategy } from "./db.types";
+
+export const DBContext = createContext<DBContextValue | null>(null);
+
+interface DBProviderProps {
+  strategy: DBStrategy;
+  children: ReactNode;
+}
+
+export function DBProvider({ strategy, children }: DBProviderProps) {
+  const value = useMemo<DBContextValue>(() => strategy, [strategy]);
+  return <DBContext.Provider value={value}>{children}</DBContext.Provider>;
+}
+```
+
+Create `src/hooks/useDB.ts`:
+
+```typescript
+import { useContext } from "react";
+import { DBContext } from "../providers/db/DBProvider";
+
+export function useDB() {
+  const ctx = useContext(DBContext);
+  if (!ctx) throw new Error("useDB must be used within <DBProvider>");
+  return ctx;
+}
+```
+
+**Step 6: Wire providers in main.tsx**
+
+Modify `src/main.tsx`:
+
+```tsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { HeroUIProvider } from "@heroui/react";
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./providers/auth/AuthProvider";
+import { localAuthStrategy } from "./providers/auth/local-auth.strategy";
+import { DBProvider } from "./providers/db/DBProvider";
+import { localDBStrategy } from "./providers/db/local-db.strategy";
+import "./index.css";
+import App from "./App";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <HeroUIProvider>
+        <AuthProvider strategy={localAuthStrategy}>
+          <DBProvider strategy={localDBStrategy}>
+            <App />
+          </DBProvider>
+        </AuthProvider>
+      </HeroUIProvider>
+    </BrowserRouter>
+  </StrictMode>,
+);
+```
+
+> **Migration note:** To switch to Supabase later, create `supabase-auth.strategy.ts` and `supabase-db.strategy.ts` implementing the same interfaces, then swap the strategy prop in `main.tsx`. Zero changes needed in any component or hook.
+
+**Step 7: Commit**
 
 ```bash
-git add src/types src/services
-git commit -m "feat: setup abstracted auth and database services"
+git add src/types src/providers src/hooks src/main.tsx
+git commit -m "feat: hooks-based auth & db services with strategy pattern"
 ```
 
 ---

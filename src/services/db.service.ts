@@ -25,9 +25,9 @@ class LocalDBService {
     const sessions = this.getStorage();
     const newSession: GSAPSession = {
       ...session,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      id: crypto.randomUUID() as import("../types").SessionId,
+      createdAt: new Date().toISOString() as import("../types").ISODateString,
+      updatedAt: new Date().toISOString() as import("../types").ISODateString,
     };
     sessions.push(newSession);
     this.saveStorage(sessions);
@@ -45,7 +45,7 @@ class LocalDBService {
     sessions[index] = {
       ...sessions[index],
       ...updates,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString() as import("../types").ISODateString,
     };
     this.saveStorage(sessions);
     return sessions[index];

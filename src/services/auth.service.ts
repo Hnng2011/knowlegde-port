@@ -1,4 +1,4 @@
-import { User } from "../types";
+import type { User } from "../types";
 
 class LocalAuthService {
   private currentUser: User | null = null;
@@ -13,7 +13,7 @@ class LocalAuthService {
   async login(username: string, pass: string): Promise<User> {
     // Hardcoded simple check
     if (username === "admin" && pass === "admin123") {
-      const user = { id: "1", username };
+      const user = { id: "1" as import("../types").UserId, username };
       this.currentUser = user;
       localStorage.setItem("gsap_user", JSON.stringify(user));
       return user;
