@@ -8,7 +8,7 @@ import {
   SandpackFileExplorer,
   useSandpack,
 } from "@codesandbox/sandpack-react";
-import { Button, Input, Spinner, Switch } from "@heroui/react";
+import { Button, Input, Spinner, Switch, Dropdown, Modal } from "@heroui/react";
 import { useDB, useAuth } from "@/hooks";
 import type { GSAPSession, CreateSessionInput } from "@/types";
 
@@ -47,7 +47,7 @@ function AdminSaveControls({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-default-100 rounded-lg">
+    <div className="flex flex-wrap items-center gap-4 mb-4 bg-default-100 rounded-lg">
       <Input
         value={title}
         onChange={setTitle as any}
@@ -81,6 +81,114 @@ function AdminSaveControls({
         )}
       </Button>
     </div>
+  );
+}
+
+function PlaygroundWorkspace({ isAdmin }: { isAdmin: boolean }) {
+  const { sandpack } = useSandpack();
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isAdmin) return;
+      e.preventDefault();
+      setMenuPosition({ x: e.clientX, y: e.clientY });
+      setIsContextMenuOpen(true);
+    },
+    [isAdmin],
+  );
+
+  const handleCreateFile = useCallback(() => {
+    if (!newFileName.trim()) return;
+    const path = newFileName.startsWith("/") ? newFileName : `/${newFileName}`;
+    sandpack.addFile(path, "");
+    sandpack.setActiveFile(path);
+    setIsModalOpen(false);
+    setNewFileName("");
+  }, [newFileName, sandpack]);
+
+  return (
+    <>
+      <div
+        onContextMenu={handleContextMenu}
+        className="flex-1 mt-2 relative min-h-[500px] h-full"
+        style={{ display: "flex", flexDirection: "column" }}
+      >
+        <Dropdown
+          isOpen={isContextMenuOpen}
+          onOpenChange={setIsContextMenuOpen}
+        >
+          <Dropdown.Trigger>
+            <div
+              className="fixed pointer-events-none z-50"
+              style={{
+                left: menuPosition.x,
+                top: menuPosition.y,
+                width: 1,
+                height: 1,
+              }}
+            />
+          </Dropdown.Trigger>
+          <Dropdown.Popover placement="bottom start">
+            <Dropdown.Menu
+              aria-label="Context Menu"
+              onAction={(key) => {
+                if (key === "new-file") {
+                  setIsModalOpen(true);
+                }
+              }}
+            >
+              <Dropdown.Item id="new-file" textValue="New File">
+                <span className="text-sm font-medium">New File</span>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
+
+        <SandpackLayout className="flex-1 w-full h-full">
+          <SandpackFileExplorer autoHiddenFiles style={{ height: "100%" }} />
+          <SandpackCodeEditor
+            showTabs
+            closableTabs
+            style={{ height: "100%", width: "100%" }}
+          />
+          <SandpackPreview style={{ height: "100%", width: "100%" }} />
+        </SandpackLayout>
+      </div>
+
+      <Modal.Backdrop isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Modal.Container>
+          <Modal.Dialog>
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>Create New File</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body className="p-4">
+              <Input
+                autoFocus
+                value={newFileName}
+                onChange={(e) => setNewFileName(e.target.value)}
+                placeholder="/components/MyComponent.tsx"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateFile();
+                }}
+              />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onPress={() => setIsModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" onPress={handleCreateFile}>
+                Create
+              </Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </>
   );
 }
 
@@ -208,15 +316,7 @@ export default function Playground() {
             setIsPublic={setIsPublic}
           />
         )}
-        <SandpackLayout className="flex-1 mt-2">
-          <SandpackFileExplorer autoHiddenFiles />
-          <SandpackCodeEditor
-            showTabs
-            closableTabs
-            style={{ height: "100%", width: "100%" }}
-          />
-          <SandpackPreview style={{ height: "100%", width: "100%" }} />
-        </SandpackLayout>
+        <PlaygroundWorkspace isAdmin={isAdmin} />
       </SandpackProvider>
     </div>
   );

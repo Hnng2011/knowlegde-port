@@ -74,7 +74,7 @@ export default function Sessions() {
               <Card.Footer>
                 <Button
                   onClick={() => navigate(`/session/${session.id}`)}
-                  variant="outline"
+                  variant="secondary"
                   className="w-full"
                 >
                   {isAdmin ? "Edit Session" : "View Code & Preview"}
