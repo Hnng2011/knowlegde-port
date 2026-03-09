@@ -1,3 +1,3 @@
 export function Portfolio() {
-  return <div>Portfolio</div>;
+  return <div className="w-full">Portfolio</div>;
 }

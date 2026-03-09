@@ -1,11 +1,12 @@
-import { motion } from "framer-motion";
+import TypewriterHover from "../core/TypingText";
 
 export default function Navbar() {
   return (
-    <motion.nav
-      initial="hidden"
-      animate="visible"
-      className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/60 backdrop-blur-md"
-    ></motion.nav>
+    <nav className="flex gap-4 container mx-auto">
+      <TypewriterHover content="Home" fontSizeClassName="text-xl" />
+      <TypewriterHover content="Project" fontSizeClassName="text-xl" />
+      <TypewriterHover content="About" fontSizeClassName="text-xl" />
+      <TypewriterHover content="Contact" fontSizeClassName="text-xl" />
+    </nav>
   );
 }

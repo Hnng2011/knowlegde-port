@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto p-4">
+      <main className="container p-2 mx-auto">
         <Routes>
           <Route path="/" element={<Portfolio />} />
         </Routes>
